@@ -1,165 +1,243 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Search() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [service, setService] = useState('all');
+  const [service, setService] = useState('');
   const [location, setLocation] = useState('');
 
   const services = [
-    { id: 'all', name: 'Tous les services' },
-    { id: 'garden', name: 'Entretien de Jardin' },
-    { id: 'pool', name: 'Maintenance de Piscine' }
+    "Entretien de Jardin",
+    "Maintenance de Piscine"
   ];
 
-  // Données de test pour les professionnels
   const professionals = [
     {
-      id: '1',
-      name: 'Jean Dupont',
-      service: 'garden',
+      id: 1,
+      name: "Jean Dupont",
+      service: "Entretien de Jardin",
       rating: 4.8,
-      reviews: 24,
-      location: 'Bordeaux',
-      specialties: ['Tonte', 'Taille de haies', 'Aménagement paysager'],
-      avatar: '👨‍🌾'
+      reviews: 127,
+      location: "Paris, Île-de-France",
+      specialties: ["Taille de haies", "Tonte de pelouse", "Élagage"],
+      avatar: "👨‍🌾",
+      price: "45€/h"
     },
     {
-      id: '2',
-      name: 'Marie Martin',
-      service: 'pool',
+      id: 2,
+      name: "Marie Martin",
+      service: "Maintenance de Piscine",
       rating: 4.9,
-      reviews: 36,
-      location: 'Bordeaux',
-      specialties: ['Traitement eau', 'Réparation', 'Hivernage'],
-      avatar: '👩‍🔧'
+      reviews: 89,
+      location: "Nice, Provence-Alpes-Côte d'Azur",
+      specialties: ["Nettoyage", "Traitement de l'eau", "Réparation"],
+      avatar: "👩‍🔧",
+      price: "60€/h"
+    },
+    {
+      id: 3,
+      name: "Pierre Laurent",
+      service: "Entretien de Jardin",
+      rating: 4.7,
+      reviews: 156,
+      location: "Bordeaux, Nouvelle-Aquitaine",
+      specialties: ["Aménagement paysager", "Irrigation", "Désherbage"],
+      avatar: "👨‍🌾",
+      price: "40€/h"
+    },
+    {
+      id: 4,
+      name: "Sophie Bernard",
+      service: "Maintenance de Piscine",
+      rating: 4.8,
+      reviews: 112,
+      location: "Lyon, Auvergne-Rhône-Alpes",
+      specialties: ["Nettoyage", "Traitement de l'eau", "Vérification des équipements"],
+      avatar: "👩‍🔧",
+      price: "55€/h"
+    },
+    {
+      id: 5,
+      name: "Marc Dubois",
+      service: "Entretien de Jardin",
+      rating: 4.6,
+      reviews: 98,
+      location: "Nantes, Pays de la Loire",
+      specialties: ["Tonte", "Taille", "Fertilisation"],
+      avatar: "👨‍🌾",
+      price: "35€/h"
+    },
+    {
+      id: 6,
+      name: "Claire Petit",
+      service: "Maintenance de Piscine",
+      rating: 4.9,
+      reviews: 145,
+      location: "Marseille, Provence-Alpes-Côte d'Azur",
+      specialties: ["Nettoyage", "Traitement de l'eau", "Détection de fuites"],
+      avatar: "👩‍🔧",
+      price: "65€/h"
+    },
+    {
+      id: 7,
+      name: "Thomas Moreau",
+      service: "Entretien de Jardin",
+      rating: 4.7,
+      reviews: 134,
+      location: "Toulouse, Occitanie",
+      specialties: ["Jardinage écologique", "Compostage", "Taille d'arbres"],
+      avatar: "👨‍🌾",
+      price: "42€/h"
+    },
+    {
+      id: 8,
+      name: "Julie Rousseau",
+      service: "Maintenance de Piscine",
+      rating: 4.8,
+      reviews: 167,
+      location: "Lille, Hauts-de-France",
+      specialties: ["Nettoyage", "Traitement de l'eau", "Optimisation énergétique"],
+      avatar: "👩‍🔧",
+      price: "50€/h"
+    },
+    {
+      id: 9,
+      name: "Lucas Girard",
+      service: "Entretien de Jardin",
+      rating: 4.5,
+      reviews: 78,
+      location: "Rennes, Bretagne",
+      specialties: ["Tonte", "Désherbage", "Aménagement"],
+      avatar: "👨‍🌾",
+      price: "38€/h"
+    },
+    {
+      id: 10,
+      name: "Emma Durand",
+      service: "Maintenance de Piscine",
+      rating: 4.9,
+      reviews: 189,
+      location: "Strasbourg, Grand Est",
+      specialties: ["Nettoyage", "Traitement de l'eau", "Rénovation"],
+      avatar: "👩‍🔧",
+      price: "58€/h"
     }
   ];
 
   const filteredProfessionals = professionals.filter(pro => {
-    const matchesService = service === 'all' || pro.service === service;
-    const matchesSearch = 
+    const matchesService = !service || pro.service === service;
+    const matchesQuery = !searchQuery || 
       pro.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      pro.specialties.some(s => s.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      pro.location.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesService && matchesSearch;
+      pro.service.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesLocation = !location || 
+      pro.location.toLowerCase().includes(location.toLowerCase());
+    return matchesService && matchesQuery && matchesLocation;
   });
 
   return (
-    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div className="px-4 py-6 sm:px-0">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Rechercher un professionnel
+    <div className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
+      <div className="px-4 py-8 sm:px-0">
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Trouvez votre professionnel
           </h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Trouvez l'expert qu'il vous faut pour votre jardin ou votre piscine
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Recherchez le professionnel idéal pour vos besoins
           </p>
         </div>
 
-        <div className="grid gap-6 mb-8 md:grid-cols-3">
-          <div>
-            <label htmlFor="search" className="block text-sm font-medium text-gray-700">
-              Recherche par mot-clé
-            </label>
-            <div className="mt-1">
-              <input
-                type="text"
-                name="search"
-                id="search"
-                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                placeholder="Nom, spécialité..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+        {/* Barre de recherche */}
+        <div className="bg-white shadow-lg rounded-lg p-6 mb-8">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+              <label htmlFor="service" className="block text-sm font-medium text-gray-700">
+                Service
+              </label>
+              <select
+                id="service"
+                value={service}
+                onChange={(e) => setService(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">Tous les services</option>
+                {services.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </div>
-          </div>
 
-          <div>
-            <label htmlFor="service" className="block text-sm font-medium text-gray-700">
-              Type de service
-            </label>
-            <select
-              id="service"
-              name="service"
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-              value={service}
-              onChange={(e) => setService(e.target.value)}
-            >
-              {services.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-              Localisation
-            </label>
-            <div className="mt-1">
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                Localisation
+              </label>
               <input
                 type="text"
-                name="location"
                 id="location"
-                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                placeholder="Ville..."
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
+                placeholder="Ex: Paris 15e"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="search" className="block text-sm font-medium text-gray-700">
+                Recherche
+              </label>
+              <input
+                type="text"
+                id="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Nom ou service..."
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <ul className="divide-y divide-gray-200">
-            {filteredProfessionals.length > 0 ? (
-              filteredProfessionals.map((pro) => (
-                <li key={pro.id}>
-                  <div className="px-4 py-4 sm:px-6 hover:bg-gray-50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <span className="text-3xl mr-4">{pro.avatar}</span>
-                        <div>
-                          <p className="text-sm font-medium text-indigo-600">
-                            {pro.name}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {services.find(s => s.id === pro.service)?.name}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="text-yellow-400 mr-1">⭐</span>
-                        <span className="text-sm text-gray-900">{pro.rating}</span>
-                        <span className="text-sm text-gray-500 ml-1">({pro.reviews} avis)</span>
-                      </div>
-                    </div>
-                    <div className="mt-2">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <span className="mr-2">📍</span>
-                        {pro.location}
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {pro.specialties.map((specialty, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
-                          >
-                            {specialty}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+        {/* Liste des professionnels */}
+        <div className="space-y-6">
+          {filteredProfessionals.map((pro) => (
+            <div key={pro.id} className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="p-6">
+                <div className="flex items-center">
+                  <span className="text-4xl mr-6">{pro.avatar}</span>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium text-gray-900">{pro.name}</h3>
+                    <p className="text-sm text-gray-500">{pro.service}</p>
+                    <p className="text-sm text-gray-500">{pro.location}</p>
                   </div>
-                </li>
-              ))
-            ) : (
-              <li className="px-6 py-4 text-center text-gray-500">
-                Aucun professionnel trouvé pour votre recherche
-              </li>
-            )}
-          </ul>
+                  <div className="flex flex-col items-end space-y-4">
+                    <p className="text-xl font-bold text-gray-900">{pro.price}</p>
+                    <div className="flex items-center">
+                      <span className="text-yellow-400 mr-1">⭐</span>
+                      <span className="text-sm font-medium text-gray-900">{pro.rating}</span>
+                      <span className="text-sm text-gray-500 ml-1">({pro.reviews} avis)</span>
+                    </div>
+                    <Link
+                      to={`/booking/${pro.id}`}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Réserver
+                    </Link>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="flex flex-wrap gap-2">
+                    {pro.specialties.map((specialty, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800"
+                      >
+                        {specialty}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

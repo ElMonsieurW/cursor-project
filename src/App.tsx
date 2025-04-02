@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Search from './pages/search/Search';
 import Bookings from './pages/bookings/Bookings';
 import Messages from './pages/messages/Messages';
+import Booking from './pages/booking/Booking';
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ function App() {
             <Route path="/search" element={<Search />} />
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/booking/:id" element={<Booking />} />
           </Routes>
         </Layout>
       </Router>
