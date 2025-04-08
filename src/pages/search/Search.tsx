@@ -20,7 +20,7 @@ export default function Search() {
       reviews: 127,
       location: "Paris, Île-de-France",
       specialties: ["Taille de haies", "Tonte de pelouse", "Élagage"],
-      avatar: "👨‍🌾",
+      avatar: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
       price: "45€/h"
     },
     {
@@ -31,19 +31,8 @@ export default function Search() {
       reviews: 89,
       location: "Nice, Provence-Alpes-Côte d'Azur",
       specialties: ["Nettoyage", "Traitement de l'eau", "Réparation"],
-      avatar: "👩‍🔧",
+      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
       price: "60€/h"
-    },
-    {
-      id: 3,
-      name: "Pierre Laurent",
-      service: "Entretien de Jardin",
-      rating: 4.7,
-      reviews: 156,
-      location: "Bordeaux, Nouvelle-Aquitaine",
-      specialties: ["Aménagement paysager", "Irrigation", "Désherbage"],
-      avatar: "👨‍🌾",
-      price: "40€/h"
     },
     {
       id: 4,
@@ -53,7 +42,7 @@ export default function Search() {
       reviews: 112,
       location: "Lyon, Auvergne-Rhône-Alpes",
       specialties: ["Nettoyage", "Traitement de l'eau", "Vérification des équipements"],
-      avatar: "👩‍🔧",
+      avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
       price: "55€/h"
     },
     {
@@ -64,7 +53,7 @@ export default function Search() {
       reviews: 98,
       location: "Nantes, Pays de la Loire",
       specialties: ["Tonte", "Taille", "Fertilisation"],
-      avatar: "👨‍🌾",
+      avatar: "https://images.unsplash.com/photo-1566492031773-4f4e44671857?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
       price: "35€/h"
     },
     {
@@ -75,7 +64,7 @@ export default function Search() {
       reviews: 145,
       location: "Marseille, Provence-Alpes-Côte d'Azur",
       specialties: ["Nettoyage", "Traitement de l'eau", "Détection de fuites"],
-      avatar: "👩‍🔧",
+      avatar: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
       price: "65€/h"
     },
     {
@@ -86,7 +75,7 @@ export default function Search() {
       reviews: 134,
       location: "Toulouse, Occitanie",
       specialties: ["Jardinage écologique", "Compostage", "Taille d'arbres"],
-      avatar: "👨‍🌾",
+      avatar: "https://images.unsplash.com/photo-1552058544-f2b08422138a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
       price: "42€/h"
     },
     {
@@ -97,7 +86,7 @@ export default function Search() {
       reviews: 167,
       location: "Lille, Hauts-de-France",
       specialties: ["Nettoyage", "Traitement de l'eau", "Optimisation énergétique"],
-      avatar: "👩‍🔧",
+      avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
       price: "50€/h"
     },
     {
@@ -108,7 +97,7 @@ export default function Search() {
       reviews: 78,
       location: "Rennes, Bretagne",
       specialties: ["Tonte", "Désherbage", "Aménagement"],
-      avatar: "👨‍🌾",
+      avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
       price: "38€/h"
     },
     {
@@ -119,7 +108,7 @@ export default function Search() {
       reviews: 189,
       location: "Strasbourg, Grand Est",
       specialties: ["Nettoyage", "Traitement de l'eau", "Rénovation"],
-      avatar: "👩‍🔧",
+      avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
       price: "58€/h"
     }
   ];
@@ -197,43 +186,63 @@ export default function Search() {
         </div>
 
         {/* Liste des professionnels */}
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredProfessionals.map((pro) => (
-            <div key={pro.id} className="bg-white shadow-lg rounded-lg overflow-hidden">
-              <div className="p-6">
-                <div className="flex items-center">
-                  <span className="text-4xl mr-6">{pro.avatar}</span>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-gray-900">{pro.name}</h3>
-                    <p className="text-sm text-gray-500">{pro.service}</p>
-                    <p className="text-sm text-gray-500">{pro.location}</p>
-                  </div>
-                  <div className="flex flex-col items-end space-y-4">
-                    <p className="text-xl font-bold text-gray-900">{pro.price}</p>
-                    <div className="flex items-center">
-                      <span className="text-yellow-400 mr-1">⭐</span>
-                      <span className="text-sm font-medium text-gray-900">{pro.rating}</span>
-                      <span className="text-sm text-gray-500 ml-1">({pro.reviews} avis)</span>
-                    </div>
-                    <Link
-                      to={`/booking/${pro.id}`}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      Réserver
-                    </Link>
-                  </div>
+            <div key={pro.id} className="group bg-white rounded-2xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+                <div className="absolute top-4 right-4 z-20">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white/90 backdrop-blur-sm shadow-lg">
+                    <span className="text-yellow-400 mr-1">⭐</span>
+                    <span className="font-medium text-gray-900">{pro.rating}</span>
+                    <span className="text-gray-500 ml-1">({pro.reviews})</span>
+                  </span>
                 </div>
-                <div className="mt-4">
+                <div className="h-64 overflow-hidden">
+                  <img 
+                    src={pro.avatar} 
+                    alt={`${pro.name}`} 
+                    className="w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-110"
+                  />
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
+                  <h3 className="text-xl font-semibold text-white mb-1">{pro.name}</h3>
+                  <p className="text-sm font-medium text-white/90">{pro.service}</p>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <p className="text-sm text-gray-500 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {pro.location}
+                  </p>
+                  <p className="text-2xl font-bold text-indigo-600">{pro.price}</p>
+                </div>
+
+                <div className="mb-6">
                   <div className="flex flex-wrap gap-2">
                     {pro.specialties.map((specialty, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800"
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700"
                       >
                         {specialty}
                       </span>
                     ))}
                   </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Link
+                    to={`/booking/${pro.id}`}
+                    className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-md hover:shadow-xl"
+                  >
+                    Réserver
+                  </Link>
                 </div>
               </div>
             </div>

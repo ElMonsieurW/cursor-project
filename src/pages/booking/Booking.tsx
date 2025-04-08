@@ -20,7 +20,7 @@ export default function Booking() {
     service: "Entretien de Jardin",
     rating: 4.8,
     reviews: 127,
-    avatar: "👨‍🌾",
+    avatar: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-1.2.1&auto=format&fit=crop&w=150&h=150&q=80",
     price: "45€/h"
   };
 
@@ -73,7 +73,11 @@ export default function Booking() {
           <div className="p-6">
             {/* Informations du professionnel */}
             <div className="flex items-center mb-8 pb-6 border-b border-gray-200">
-              <span className="text-4xl mr-6">{professional.avatar}</span>
+              <img 
+                src={professional.avatar} 
+                alt={`${professional.name}`} 
+                className="w-16 h-16 rounded-full object-cover mr-6"
+              />
               <div className="flex-1">
                 <h2 className="text-2xl font-bold text-gray-900">{professional.name}</h2>
                 <p className="text-gray-600">{professional.service}</p>
