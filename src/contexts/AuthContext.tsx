@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '../lib/supabaseClient';
+import { useSessionRefresh } from '../hooks/useSessionRefresh';
 
 interface User {
   id: string;
@@ -15,6 +17,7 @@ interface AuthContextType {
   register: (user: Omit<User, 'id' | 'createdAt'> & { password: string }) => Promise<boolean>;
   logout: () => void;
   loading: boolean;
+  refreshKey: number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,44 +38,77 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  
+  const { refreshKey, isAuthenticated } = useSessionRefresh();
 
   useEffect(() => {
-    // Vérifier l'état de connexion au chargement
-    const isLoggedInStorage = localStorage.getItem('isLoggedIn') === 'true';
-    const storedUser = localStorage.getItem('user');
+    const checkAuth = async () => {
+      setLoading(true);
+      
+      try {
+        const { data } = await supabase.auth.getSession();
+        const session = data.session;
+        
+        if (session) {
+          const { data: userData } = await supabase.auth.getUser();
+          
+          if (userData && userData.user) {
+            const user: User = {
+              id: userData.user.id,
+              firstName: userData.user.user_metadata?.firstName || '',
+              lastName: userData.user.user_metadata?.lastName || '',
+              email: userData.user.email || '',
+              createdAt: userData.user.created_at || ''
+            };
+            
+            setCurrentUser(user);
+            setIsLoggedIn(true);
+          }
+        } else {
+          const isLoggedInStorage = localStorage.getItem('isLoggedIn') === 'true';
+          const storedUser = localStorage.getItem('user');
+          
+          if (isLoggedInStorage && storedUser) {
+            setCurrentUser(JSON.parse(storedUser));
+            setIsLoggedIn(true);
+          } else {
+            setCurrentUser(null);
+            setIsLoggedIn(false);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification de l\'authentification:', error);
+        setCurrentUser(null);
+        setIsLoggedIn(false);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    if (isLoggedInStorage && storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
-      setIsLoggedIn(true);
-    }
-    
-    setLoading(false);
-  }, []);
+    checkAuth();
+  }, [refreshKey]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setLoading(true);
     
     try {
-      // Simulation d'un appel API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      // Vérifier les identifiants (dans un cas réel, ce serait une API)
-      const storedUser = localStorage.getItem('user');
+      if (error) {
+        console.error('Erreur de connexion:', error.message);
+        return false;
+      }
       
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        if (user.email === email) {
-          // En cas réel, le mot de passe serait vérifié côté serveur
-          localStorage.setItem('isLoggedIn', 'true');
-          setCurrentUser(user);
-          setIsLoggedIn(true);
-          return true;
-        }
+      if (data.user) {
+        return true;
       }
       
       return false;
     } catch (error) {
-      console.error(error);
+      console.error('Erreur lors de la connexion:', error);
       return false;
     } finally {
       setLoading(false);
@@ -83,40 +119,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLoading(true);
     
     try {
-      // Simulation d'un appel API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Créer un nouvel utilisateur
-      const newUser: User = {
-        id: Date.now().toString(),
-        firstName: userData.firstName,
-        lastName: userData.lastName,
+      const { data, error } = await supabase.auth.signUp({
         email: userData.email,
-        createdAt: new Date().toISOString()
-      };
+        password: userData.password,
+        options: {
+          data: {
+            firstName: userData.firstName,
+            lastName: userData.lastName
+          }
+        }
+      });
       
-      // Enregistrer l'utilisateur
-      localStorage.setItem('user', JSON.stringify(newUser));
-      localStorage.setItem('isLoggedIn', 'true');
+      if (error) {
+        console.error('Erreur d\'inscription:', error.message);
+        return false;
+      }
       
-      setCurrentUser(newUser);
-      setIsLoggedIn(true);
+      if (data.user) {
+        return true;
+      }
       
-      return true;
+      return false;
     } catch (error) {
-      console.error(error);
+      console.error('Erreur lors de l\'inscription:', error);
       return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    setCurrentUser(null);
-    setIsLoggedIn(false);
-    localStorage.removeItem('isLoggedIn');
-    // Dans un cas réel, on ne supprimerait pas l'utilisateur du stockage local
-    // mais pour simplifier notre exemple, on conserve cette approche
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      
+      setCurrentUser(null);
+      setIsLoggedIn(false);
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('user');
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    }
   };
 
   const value = {
@@ -125,7 +167,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     register,
     logout,
-    loading
+    loading,
+    refreshKey
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

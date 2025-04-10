@@ -1,37 +1,95 @@
 import { useState, useEffect } from 'react';
 import { bookingService } from '../../services/bookingService';
 import { Booking } from '../../types/booking';
+import { useAuth } from '../../contexts/AuthContext';
+import MessageModal from '../../components/MessageModal';
+import { professionalService } from '../../services/professionalService';
 
 const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40' fill='none'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23E5E7EB'/%3E%3Cpath d='M20 20C22.21 20 24 18.21 24 16C24 13.79 22.21 12 20 12C17.79 12 16 13.79 16 16C16 18.21 17.79 20 20 20ZM20 22C17.33 22 12 23.34 12 26V28H28V26C28 23.34 22.67 22 20 22Z' fill='%239CA3AF'/%3E%3C/svg%3E";
+
+// Vérifier si une URL d'avatar est valide
+const validateAvatar = (avatarUrl?: string): string => {
+  if (!avatarUrl) return DEFAULT_AVATAR;
+  
+  // Vérifier si l'URL est valide
+  try {
+    new URL(avatarUrl);
+    return avatarUrl;
+  } catch (e) {
+    console.warn('URL d\'avatar invalide:', avatarUrl);
+    return DEFAULT_AVATAR;
+  }
+};
 
 export default function Bookings() {
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const { isLoggedIn, refreshKey } = useAuth();
 
   useEffect(() => {
+    if (isLoggedIn) {
+      loadBookings();
+    }
+  }, [activeTab, isLoggedIn, refreshKey]);
+
+  const loadBookings = () => {
     const allBookings = bookingService.getBookings();
     const now = new Date();
     
-    const upcomingBookings = allBookings.filter(booking => {
+    // Récupérer les détails des professionnels pour chaque réservation
+    const bookingsWithProfessionalDetails = allBookings.map(booking => {
+      // Si la réservation a déjà les détails de professionnel complets, on la retourne telle quelle
+      if (booking.professionalName && booking.professionalAvatar) {
+        return {
+          ...booking,
+          professionalAvatar: validateAvatar(booking.professionalAvatar)
+        };
+      }
+      
+      // Sinon, on récupère les détails du professionnel
+      const professional = professionalService.getProfessionalById(Number(booking.professionalId));
+      return {
+        ...booking,
+        professionalName: professional?.name || 'Professionnel inconnu',
+        professionalAvatar: validateAvatar(professional?.avatar)
+      };
+    });
+    
+    const upcomingBookings = bookingsWithProfessionalDetails.filter(booking => {
       const bookingDate = new Date(`${booking.date}T${booking.time}`);
       return bookingDate >= now && booking.status !== 'cancelled';
     });
 
-    const pastBookings = allBookings.filter(booking => {
+    const pastBookings = bookingsWithProfessionalDetails.filter(booking => {
       const bookingDate = new Date(`${booking.date}T${booking.time}`);
       return bookingDate < now || booking.status === 'cancelled';
     });
 
     setBookings(activeTab === 'upcoming' ? upcomingBookings : pastBookings);
-  }, [activeTab]);
+  };
 
   const handleCancelBooking = (bookingId: string) => {
     bookingService.updateBookingStatus(bookingId, 'cancelled');
     setBookings(prev => prev.filter(booking => booking.id !== bookingId));
   };
 
-  const handleImageError = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    event.currentTarget.src = DEFAULT_AVATAR;
+  const handleOpenMessageModal = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsMessageModalOpen(true);
+  };
+
+  const handleCloseMessageModal = () => {
+    setIsMessageModalOpen(false);
+    setTimeout(() => {
+      setSelectedBooking(null);
+    }, 300);
+  };
+
+  // Renvoie l'ID du prestataire au format attendu par le service de messagerie
+  const getProfessionalId = (booking: Booking) => {
+    return `pro-${booking.professionalId}`;
   };
 
   const getStatusColor = (status: Booking['status']) => {
@@ -112,7 +170,9 @@ export default function Bookings() {
                         src={booking.professionalAvatar || DEFAULT_AVATAR} 
                         alt={`${booking.professionalName}`} 
                         className="w-16 h-16 rounded-full object-cover mr-6"
-                        onError={handleImageError}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR;
+                        }}
                       />
                       <div>
                         <h3 className="text-lg font-medium text-gray-900">
@@ -151,16 +211,26 @@ export default function Bookings() {
                     </div>
                   )}
 
-                  {activeTab === 'upcoming' && booking.status === 'pending' && (
-                    <div className="mt-4 flex justify-end">
+                  <div className="mt-4 flex justify-end space-x-3">
+                    <button
+                      onClick={() => handleOpenMessageModal(booking)}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      Message
+                    </button>
+                    
+                    {activeTab === 'upcoming' && booking.status === 'pending' && (
                       <button
                         onClick={() => handleCancelBooking(booking.id)}
                         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                       >
                         Annuler la réservation
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))
             ) : (
@@ -171,6 +241,18 @@ export default function Bookings() {
           </div>
         </div>
       </div>
+
+      {/* Modal de messagerie */}
+      {selectedBooking && (
+        <MessageModal
+          isOpen={isMessageModalOpen}
+          onClose={handleCloseMessageModal}
+          bookingId={Number(selectedBooking.id)}
+          recipientId={getProfessionalId(selectedBooking)}
+          recipientName={selectedBooking.professionalName}
+          recipientAvatar={selectedBooking.professionalAvatar}
+        />
+      )}
     </div>
   );
 } 

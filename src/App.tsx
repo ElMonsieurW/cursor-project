@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import AuthRefreshHandler from './components/AuthRefreshHandler';
 import Home from './pages/Home';
 import Search from './pages/search/Search';
 import Bookings from './pages/bookings/Bookings';
@@ -16,20 +17,23 @@ function App() {
       <Router>
         <div className="min-h-screen bg-gray-50">
           <Navbar />
-          <Routes>
-            {/* Routes publiques */}
-            <Route path="/" element={<Home />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+          <AuthRefreshHandler />
+          <div className="container mx-auto py-4 px-4">
+            <Routes>
+              {/* Routes publiques */}
+              <Route path="/" element={<Home />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            {/* Routes protégées */}
-            <Route element={<PrivateRoute />}>
-              <Route path="/bookings" element={<Bookings />} />
-              <Route path="/booking/:id" element={<Booking />} />
-              <Route path="/messages" element={<Messages />} />
-            </Route>
-          </Routes>
+              {/* Routes protégées */}
+              <Route element={<PrivateRoute />}>
+                <Route path="/bookings" element={<Bookings />} />
+                <Route path="/booking/:id" element={<Booking />} />
+                <Route path="/messages" element={<Messages />} />
+              </Route>
+            </Routes>
+          </div>
         </div>
       </Router>
     </AuthProvider>
