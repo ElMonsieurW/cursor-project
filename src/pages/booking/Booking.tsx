@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { bookingService } from '../../services/bookingService';
+import { timeSlotService, TimeSlot } from '../../services/timeSlotService';
+import AddressAutocomplete from '../../components/AddressAutocomplete';
+import { AddressSuggestion } from '../../services/addressService';
 
 export default function Booking() {
   const { id } = useParams();
@@ -12,6 +15,12 @@ export default function Booking() {
     address: '',
     notes: ''
   });
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedAddress, setSelectedAddress] = useState<AddressSuggestion | null>(null);
 
   // Données de test - À remplacer par des données réelles
   const professional = {
@@ -24,13 +33,48 @@ export default function Booking() {
     price: "45€/h"
   };
 
+  // Générer les dates disponibles pour les deux prochaines semaines
+  useEffect(() => {
+    const dates: string[] = [];
+    const today = new Date();
+    
+    // Générer les dates pour les 14 prochains jours
+    for (let i = 0; i < 14; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+    
+    setAvailableDates(dates);
+  }, []);
+
+  // Charger les créneaux horaires lorsque la date change
+  useEffect(() => {
+    if (formData.date) {
+      setIsLoading(true);
+      const slots = timeSlotService.getAvailableTimeSlots(professional.id, formData.date);
+      setTimeSlots(slots);
+      setSelectedSlotId(null);
+      setFormData(prev => ({ ...prev, time: '' }));
+      setIsLoading(false);
+    }
+  }, [formData.date, professional.id]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!selectedSlotId) {
+      alert('Veuillez sélectionner un créneau horaire');
+      return;
+    }
     
     // Calculer le prix total
     const pricePerHour = parseInt(professional.price);
     const duration = parseInt(formData.duration);
     const totalPrice = `${pricePerHour * duration}€`;
+
+    // Marquer le créneau comme réservé
+    timeSlotService.bookTimeSlot(selectedSlotId);
 
     // Créer la réservation
     bookingService.addBooking({
@@ -55,6 +99,60 @@ export default function Booking() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleTimeSlotSelect = (slot: TimeSlot) => {
+    setSelectedSlotId(slot.id);
+    setFormData(prev => ({ 
+      ...prev, 
+      time: slot.startTime 
+    }));
+  };
+
+  const handleDateSelect = (date: string) => {
+    setSelectedDate(date);
+    setFormData(prev => ({ ...prev, date }));
+  };
+
+  const handleAddressChange = (address: string) => {
+    setFormData(prev => ({ ...prev, address }));
+  };
+
+  const handleAddressSelect = (suggestion: AddressSuggestion) => {
+    setSelectedAddress(suggestion);
+    setFormData(prev => ({ ...prev, address: suggestion.fullAddress }));
+  };
+
+  // Fonction pour formater la date en français
+  const formatDate = (dateString: string): string => {
+    const options: Intl.DateTimeFormatOptions = { 
+      weekday: 'long', 
+      day: 'numeric', 
+      month: 'long' 
+    };
+    return new Date(dateString).toLocaleDateString('fr-FR', options);
+  };
+
+  // Fonction pour obtenir le jour de la semaine
+  const getDayOfWeek = (dateString: string): string => {
+    const options: Intl.DateTimeFormatOptions = { weekday: 'long' };
+    return new Date(dateString).toLocaleDateString('fr-FR', options);
+  };
+
+  // Fonction pour obtenir le jour du mois
+  const getDayOfMonth = (dateString: string): string => {
+    return new Date(dateString).getDate().toString();
+  };
+
+  // Vérifier si une date est aujourd'hui
+  const isToday = (dateString: string): boolean => {
+    const today = new Date();
+    const date = new Date(dateString);
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
   };
 
   return (
@@ -101,38 +199,80 @@ export default function Booking() {
 
             {/* Formulaire de réservation */}
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div>
-                  <label htmlFor="date" className="block text-sm font-medium text-gray-700">
-                    Date
-                  </label>
+              {/* Sélection de date */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Choisissez une date</h3>
+                <div className="mb-6">
+                  <div className="grid grid-cols-7 gap-2">
+                    {availableDates.map((date) => (
+                      <button
+                        key={date}
+                        type="button"
+                        onClick={() => handleDateSelect(date)}
+                        className={`flex flex-col items-center justify-center p-3 rounded-lg border ${
+                          formData.date === date
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className="text-xs font-medium uppercase">
+                          {getDayOfWeek(date).substring(0, 3)}
+                        </span>
+                        <span className="text-xl font-bold my-1">{getDayOfMonth(date)}</span>
+                        {isToday(date) && (
+                          <span className="text-xs font-medium bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                            Aujourd'hui
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                   <input
-                    type="date"
+                    type="hidden"
                     name="date"
-                    id="date"
-                    required
-                    min={new Date().toISOString().split('T')[0]}
                     value={formData.date}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="time" className="block text-sm font-medium text-gray-700">
-                    Heure
-                  </label>
-                  <input
-                    type="time"
-                    name="time"
-                    id="time"
                     required
-                    value={formData.time}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
+              </div>
 
+              {/* Sélection de créneau horaire */}
+              {formData.date && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Choisissez un créneau horaire pour le {formatDate(formData.date)}
+                  </h3>
+                  
+                  {isLoading ? (
+                    <div className="p-4 text-center">
+                      <p className="text-gray-500">Chargement des créneaux...</p>
+                    </div>
+                  ) : timeSlots.length > 0 ? (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                      {timeSlots.map(slot => (
+                        <button
+                          key={slot.id}
+                          type="button"
+                          onClick={() => handleTimeSlotSelect(slot)}
+                          className={`py-3 px-4 rounded-md text-center ${
+                            selectedSlotId === slot.id
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                          }`}
+                        >
+                          {slot.startTime}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center">
+                      <p className="text-red-500">Aucun créneau disponible pour cette date</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>
                   <label htmlFor="duration" className="block text-sm font-medium text-gray-700">
                     Durée (heures)
@@ -152,18 +292,12 @@ export default function Booking() {
                 </div>
 
                 <div>
-                  <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                    Adresse
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    id="address"
-                    required
+                  <AddressAutocomplete
                     value={formData.address}
-                    onChange={handleChange}
-                    placeholder="Adresse complète"
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    onChange={handleAddressChange}
+                    onSelect={handleAddressSelect}
+                    required={true}
+                    placeholder="Saisissez votre adresse complète"
                   />
                 </div>
               </div>
@@ -183,6 +317,21 @@ export default function Booking() {
                 />
               </div>
 
+              {selectedSlotId && (
+                <div className="bg-green-50 p-4 rounded-md">
+                  <h3 className="text-md font-medium text-green-800">Résumé de votre réservation</h3>
+                  <div className="mt-2 text-sm text-green-700">
+                    <p><strong>Date:</strong> {formatDate(formData.date)}</p>
+                    <p><strong>Heure:</strong> {formData.time}</p>
+                    <p><strong>Durée:</strong> {formData.duration} heure{parseInt(formData.duration) > 1 ? 's' : ''}</p>
+                    {formData.address && (
+                      <p><strong>Adresse:</strong> {formData.address}</p>
+                    )}
+                    <p><strong>Prix estimé:</strong> {parseInt(professional.price) * parseInt(formData.duration)}€</p>
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end space-x-4">
                 <button
                   type="button"
@@ -193,7 +342,12 @@ export default function Booking() {
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  disabled={!selectedSlotId}
+                  className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
+                    selectedSlotId 
+                      ? 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500' 
+                      : 'bg-indigo-300 cursor-not-allowed'
+                  }`}
                 >
                   Confirmer la réservation
                 </button>

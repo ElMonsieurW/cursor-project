@@ -1,8 +1,7 @@
 import { supabase } from '../lib/supabaseClient';
 import { messageService, Message } from './messageService';
 import { professionalService } from './professionalService';
-
-const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40' fill='none'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23E5E7EB'/%3E%3Cpath d='M20 20C22.21 20 24 18.21 24 16C24 13.79 22.21 12 20 12C17.79 12 16 13.79 16 16C16 18.21 17.79 20 20 20ZM20 22C17.33 22 12 23.34 12 26V28H28V26C28 23.34 22.67 22 20 22Z' fill='%239CA3AF'/%3E%3C/svg%3E";
+import avatarService from './avatarService';
 
 export interface Conversation {
   id: string;
@@ -44,26 +43,12 @@ const getLocalMessages = (): Message[] => {
 
 // Extraire l'ID du professionnel à partir de l'ID de la conversation
 const extractProfessionalId = (partnerId: string): number | undefined => {
-  if (partnerId.startsWith('pro-')) {
-    const proIdStr = partnerId.replace('pro-', '');
-    const proId = parseInt(proIdStr, 10);
-    return isNaN(proId) ? undefined : proId;
-  }
-  return undefined;
+  return avatarService.extractProfessionalId(partnerId);
 };
 
 // Vérifier si une URL d'avatar est valide ou retourner l'avatar par défaut
 const validateAvatar = (avatarUrl?: string): string => {
-  if (!avatarUrl) return DEFAULT_AVATAR;
-  
-  // Vérifier si l'URL est valide
-  try {
-    new URL(avatarUrl);
-    return avatarUrl;
-  } catch (e) {
-    console.warn('URL d\'avatar invalide:', avatarUrl);
-    return DEFAULT_AVATAR;
-  }
+  return avatarService.validateAvatar(avatarUrl);
 };
 
 // Effacer les conversations au démarrage
@@ -143,7 +128,7 @@ export const conversationService = {
         }
 
         // Extraire l'ID du professionnel
-        const professionalId = extractProfessionalId(partnerId);
+        const professionalId = avatarService.extractProfessionalId(partnerId);
         if (!professionalId) {
           continue; // Ignorer les partenaires qui ne sont pas des professionnels valides
         }
@@ -160,11 +145,14 @@ export const conversationService = {
         const lastMsg = messages[0];
         const isUnread = messages.some(msg => msg.recipientId === userId && !msg.read);
         
+        // Récupérer l'avatar directement du service pour garantir la cohérence
+        const professionalAvatar = avatarService.getProfessionalAvatar(professionalId);
+        
         conversations.push({
           id: `conv-${partnerId}`,
           conversationPartnerId: partnerId,
           conversationPartnerName: professional.name,
-          conversationPartnerAvatar: validateAvatar(professional.avatar),
+          conversationPartnerAvatar: professionalAvatar,
           lastMessage: lastMsg.content,
           lastMessageTime: lastMsg.createdAt,
           unread: isUnread,
@@ -217,7 +205,7 @@ export const conversationService = {
       }
 
       // Extraire l'ID du professionnel
-      const professionalId = extractProfessionalId(partnerId);
+      const professionalId = avatarService.extractProfessionalId(partnerId);
       if (!professionalId) {
         return; // Ignorer si l'ID du professionnel n'est pas valide
       }
@@ -227,6 +215,9 @@ export const conversationService = {
       if (!professional) {
         return; // Ignorer si le professionnel n'existe pas
       }
+      
+      // Récupérer l'avatar directement du service pour garantir la cohérence
+      const professionalAvatar = avatarService.getProfessionalAvatar(professionalId);
       
       // Vérifier si une conversation existe déjà
       const existingConvIndex = localConversations.findIndex(
@@ -239,7 +230,9 @@ export const conversationService = {
           ...localConversations[existingConvIndex],
           lastMessage: message.content,
           lastMessageTime: message.createdAt,
-          unread: message.recipientId === userId && !message.read
+          unread: message.recipientId === userId && !message.read,
+          // Mettre à jour l'avatar pour garantir la cohérence
+          conversationPartnerAvatar: professionalAvatar
         };
       } else {
         // Créer une nouvelle conversation
@@ -247,7 +240,7 @@ export const conversationService = {
           id: `conv-${partnerId}`,
           conversationPartnerId: partnerId,
           conversationPartnerName: professional.name,
-          conversationPartnerAvatar: validateAvatar(professional.avatar),
+          conversationPartnerAvatar: professionalAvatar,
           lastMessage: message.content,
           lastMessageTime: message.createdAt,
           unread: message.recipientId === userId && !message.read,

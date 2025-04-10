@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { messageService, Message } from '../services/messageService';
 import { supabase } from '../lib/supabaseClient';
+import avatarService from '../services/avatarService';
 
 interface MessageModalProps {
   isOpen: boolean;
@@ -11,22 +12,6 @@ interface MessageModalProps {
   recipientAvatar?: string;
 }
 
-const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40' fill='none'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23E5E7EB'/%3E%3Cpath d='M20 20C22.21 20 24 18.21 24 16C24 13.79 22.21 12 20 12C17.79 12 16 13.79 16 16C16 18.21 17.79 20 20 20ZM20 22C17.33 22 12 23.34 12 26V28H28V26C28 23.34 22.67 22 20 22Z' fill='%239CA3AF'/%3E%3C/svg%3E";
-
-// Vérifier si une URL d'avatar est valide
-const validateAvatar = (avatarUrl?: string): string => {
-  if (!avatarUrl) return DEFAULT_AVATAR;
-  
-  // Vérifier si l'URL est valide
-  try {
-    new URL(avatarUrl);
-    return avatarUrl;
-  } catch (e) {
-    console.warn('URL d\'avatar invalide:', avatarUrl);
-    return DEFAULT_AVATAR;
-  }
-};
-
 export default function MessageModal({ isOpen, onClose, bookingId, recipientId, recipientName, recipientAvatar }: MessageModalProps) {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -34,7 +19,7 @@ export default function MessageModal({ isOpen, onClose, bookingId, recipientId, 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userAvatar, setUserAvatar] = useState<string>(DEFAULT_AVATAR);
+  const [userAvatar, setUserAvatar] = useState<string>(avatarService.DEFAULT_AVATAR);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Récupérer l'avatar de l'utilisateur
@@ -120,15 +105,26 @@ export default function MessageModal({ isOpen, onClose, bookingId, recipientId, 
   // Récupérer l'avatar correspondant à l'ID de l'expéditeur
   const getMessageAvatar = (senderId: string) => {
     if (senderId === recipientId) {
-      return validateAvatar(recipientAvatar);
+      // S'il s'agit du professionnel, utiliser l'avatar du professionnel
+      const professionalId = avatarService.extractProfessionalId(recipientId);
+      if (professionalId) {
+        return avatarService.getProfessionalAvatar(professionalId);
+      }
+      // Si l'ID du professionnel ne peut pas être extrait, utiliser l'avatar fourni
+      return avatarService.validateAvatar(recipientAvatar);
     } else {
+      // Sinon, c'est l'utilisateur
       return userAvatar;
     }
   };
 
   if (!isOpen) return null;
 
-  const safeRecipientAvatar = validateAvatar(recipientAvatar);
+  // Utiliser l'avatar du professionnel en priorité via son ID
+  const professionalId = avatarService.extractProfessionalId(recipientId);
+  const safeRecipientAvatar = professionalId 
+    ? avatarService.getProfessionalAvatar(professionalId)
+    : avatarService.validateAvatar(recipientAvatar);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -144,9 +140,7 @@ export default function MessageModal({ isOpen, onClose, bookingId, recipientId, 
                     src={safeRecipientAvatar} 
                     alt={recipientName}
                     className="w-10 h-10 rounded-full object-cover mr-3"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
-                    }}
+                    onError={avatarService.handleAvatarError}
                   />
                   <div>
                     <h3 className="text-lg leading-6 font-medium text-gray-900">
@@ -177,9 +171,7 @@ export default function MessageModal({ isOpen, onClose, bookingId, recipientId, 
                             src={getMessageAvatar(msg.senderId)} 
                             alt={msg.senderId === recipientId ? recipientName : "Moi"}
                             className="w-6 h-6 rounded-full object-cover mr-2"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
-                            }}
+                            onError={avatarService.handleAvatarError}
                           />
                           <p className="text-xs font-medium text-gray-700">
                             {msg.senderId === recipientId ? recipientName : "Moi"}

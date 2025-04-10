@@ -4,22 +4,7 @@ import { Booking } from '../../types/booking';
 import { useAuth } from '../../contexts/AuthContext';
 import MessageModal from '../../components/MessageModal';
 import { professionalService } from '../../services/professionalService';
-
-const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40' fill='none'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23E5E7EB'/%3E%3Cpath d='M20 20C22.21 20 24 18.21 24 16C24 13.79 22.21 12 20 12C17.79 12 16 13.79 16 16C16 18.21 17.79 20 20 20ZM20 22C17.33 22 12 23.34 12 26V28H28V26C28 23.34 22.67 22 20 22Z' fill='%239CA3AF'/%3E%3C/svg%3E";
-
-// Vérifier si une URL d'avatar est valide
-const validateAvatar = (avatarUrl?: string): string => {
-  if (!avatarUrl) return DEFAULT_AVATAR;
-  
-  // Vérifier si l'URL est valide
-  try {
-    new URL(avatarUrl);
-    return avatarUrl;
-  } catch (e) {
-    console.warn('URL d\'avatar invalide:', avatarUrl);
-    return DEFAULT_AVATAR;
-  }
-};
+import avatarService from '../../services/avatarService';
 
 export default function Bookings() {
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
@@ -40,20 +25,25 @@ export default function Bookings() {
     
     // Récupérer les détails des professionnels pour chaque réservation
     const bookingsWithProfessionalDetails = allBookings.map(booking => {
-      // Si la réservation a déjà les détails de professionnel complets, on la retourne telle quelle
-      if (booking.professionalName && booking.professionalAvatar) {
+      // Récupérer l'ID du professionnel
+      const professionalId = Number(booking.professionalId);
+      
+      // Si la réservation a déjà les détails de professionnel complets
+      if (booking.professionalName) {
+        // Toujours récupérer l'avatar du service centralisé pour garantir la cohérence
         return {
           ...booking,
-          professionalAvatar: validateAvatar(booking.professionalAvatar)
+          professionalAvatar: avatarService.getProfessionalAvatar(professionalId)
         };
       }
       
-      // Sinon, on récupère les détails du professionnel
-      const professional = professionalService.getProfessionalById(Number(booking.professionalId));
+      // Sinon, récupérer les détails du professionnel
+      const professional = professionalService.getProfessionalById(professionalId);
       return {
         ...booking,
         professionalName: professional?.name || 'Professionnel inconnu',
-        professionalAvatar: validateAvatar(professional?.avatar)
+        // Utiliser le service d'avatars pour garantir la cohérence
+        professionalAvatar: avatarService.getProfessionalAvatar(professionalId)
       };
     });
     
@@ -89,7 +79,7 @@ export default function Bookings() {
 
   // Renvoie l'ID du prestataire au format attendu par le service de messagerie
   const getProfessionalId = (booking: Booking) => {
-    return `pro-${booking.professionalId}`;
+    return avatarService.formatProfessionalId(booking.professionalId);
   };
 
   const getStatusColor = (status: Booking['status']) => {
@@ -167,12 +157,10 @@ export default function Bookings() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <img 
-                        src={booking.professionalAvatar || DEFAULT_AVATAR} 
+                        src={booking.professionalAvatar} 
                         alt={`${booking.professionalName}`} 
                         className="w-16 h-16 rounded-full object-cover mr-6"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR;
-                        }}
+                        onError={avatarService.handleAvatarError}
                       />
                       <div>
                         <h3 className="text-lg font-medium text-gray-900">

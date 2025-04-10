@@ -1,3 +1,5 @@
+import avatarService from './avatarService';
+
 export interface Professional {
   id: number;
   name: string;
@@ -20,7 +22,7 @@ const professionals: Professional[] = [
     reviews: 125,
     location: "Paris, 75001",
     specialties: ["Réparation de fuites", "Installation sanitaire", "Chauffage"],
-    avatar: "https://randomuser.me/api/portraits/men/1.jpg",
+    avatar: avatarService.getProfessionalAvatar(1),
     price: "60€/h"
   },
   {
@@ -31,7 +33,7 @@ const professionals: Professional[] = [
     reviews: 98,
     location: "Lyon, 69002",
     specialties: ["Installation électrique", "Dépannage", "Domotique"],
-    avatar: "https://randomuser.me/api/portraits/women/2.jpg",
+    avatar: avatarService.getProfessionalAvatar(2),
     price: "55€/h"
   },
   {
@@ -42,7 +44,7 @@ const professionals: Professional[] = [
     reviews: 87,
     location: "Marseille, 13001",
     specialties: ["Taille de haies", "Entretien de pelouse", "Aménagement paysager"],
-    avatar: "https://randomuser.me/api/portraits/men/3.jpg",
+    avatar: avatarService.getProfessionalAvatar(3),
     price: "45€/h"
   },
   {
@@ -53,7 +55,7 @@ const professionals: Professional[] = [
     reviews: 156,
     location: "Bordeaux, 33000",
     specialties: ["Nettoyage régulier", "Grand ménage", "Nettoyage de vitres"],
-    avatar: "https://randomuser.me/api/portraits/women/4.jpg",
+    avatar: avatarService.getProfessionalAvatar(4),
     price: "30€/h"
   },
   {
@@ -64,7 +66,7 @@ const professionals: Professional[] = [
     reviews: 112,
     location: "Lille, 59000",
     specialties: ["Montage de meubles", "Fixations murales", "Petites réparations"],
-    avatar: "https://randomuser.me/api/portraits/men/5.jpg",
+    avatar: avatarService.getProfessionalAvatar(5),
     price: "40€/h"
   }
 ];
@@ -110,5 +112,10 @@ export const professionalService = {
     }
     
     return filtered;
+  },
+  
+  // Récupérer l'avatar d'un professionnel
+  getProfessionalAvatar: (id: number): string => {
+    return avatarService.getProfessionalAvatar(id);
   }
 }; 

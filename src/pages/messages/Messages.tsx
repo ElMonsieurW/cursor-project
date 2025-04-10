@@ -4,8 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { conversationService, Conversation } from '../../services/conversationService';
 import { messageService } from '../../services/messageService';
 import MessageModal from '../../components/MessageModal';
-
-const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40' fill='none'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23E5E7EB'/%3E%3Cpath d='M20 20C22.21 20 24 18.21 24 16C24 13.79 22.21 12 20 12C17.79 12 16 13.79 16 16C16 18.21 17.79 20 20 20ZM20 22C17.33 22 12 23.34 12 26V28H28V26C28 23.34 22.67 22 20 22Z' fill='%239CA3AF'/%3E%3C/svg%3E";
+import avatarService from '../../services/avatarService';
 
 export default function Messages() {
   const navigate = useNavigate();
@@ -173,10 +172,10 @@ export default function Messages() {
                       >
                         <div className="flex items-center">
                           <img 
-                            src={conv.conversationPartnerAvatar || DEFAULT_AVATAR} 
+                            src={conv.conversationPartnerAvatar} 
                             alt={conv.conversationPartnerName}
                             className="w-12 h-12 rounded-full object-cover mr-4"
-                            onError={(e: any) => { e.target.src = DEFAULT_AVATAR }}
+                            onError={avatarService.handleAvatarError}
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-baseline">
